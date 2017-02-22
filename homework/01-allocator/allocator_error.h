@@ -2,10 +2,12 @@
 #define ALLOCATOR_ERROR
 
 #include <stdexcept>
+#include <string>
 
 enum class AllocErrorType {
     InvalidFree,
     NoMemory,
+    InternalError,
 };
 
 class AllocError : std::runtime_error {
@@ -19,6 +21,9 @@ public:
     }
 
     AllocErrorType getType() const { return type; }
+    const char * message() const {
+        return this->what();
+    }
 };
 
 #endif //ALLOCATOR_ERROR

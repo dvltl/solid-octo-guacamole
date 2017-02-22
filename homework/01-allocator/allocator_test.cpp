@@ -14,10 +14,8 @@ TEST(Allocator, AllocInRange) {
     Allocator a(buf, sizeof(buf));
 
     int size = 500;
-
     Pointer p = a.alloc(size);
     char* v = reinterpret_cast<char*>(p.get());
-
     EXPECT_GE(v, buf);
     EXPECT_LE(v + size, buf + sizeof(buf));
 
@@ -48,14 +46,24 @@ static bool isValidMemory(Pointer& p, size_t allocatedSize) {
     return (v >= buf && v + allocatedSize <= buf + sizeof(buf));
 }
 
+static void posix_death_signal(int signum)
+{
+    std::cerr << "segfault" << std::endl;
+    signal(signum, SIG_DFL);
+    exit(3);
+}
+
 static bool fillUp(Allocator& a, size_t allocSize, vector<Pointer>& out) {
     int Max = (2 * sizeof(buf) / allocSize); // To avoid creating an infinite loop.
+
+//    signal(SIGSEGV, posix_death_signal);
 
     for (int i = 0; i < Max; i++)
         try {
             out.push_back(a.alloc(allocSize));
             writeTo(out.back(), allocSize);
-        } catch (AllocError&) {
+        } catch (AllocError& e) {
+            std::cout << e.message() << std::endl;
             return true;
         }
 
@@ -69,7 +77,6 @@ TEST(Allocator, AllocReadWrite) {
     size_t size = 300;
     for (int i = 0; i < 20; i++) {
         ptr.push_back(a.alloc(size));
-
         EXPECT_TRUE(isValidMemory(ptr.back(), size));
         writeTo(ptr.back(), size);
     }
@@ -77,6 +84,7 @@ TEST(Allocator, AllocReadWrite) {
     for (Pointer& p : ptr) {
         EXPECT_TRUE(isDataOk(p, size));
     }
+
     for (Pointer& p : ptr) {
         a.free(p);
     }
