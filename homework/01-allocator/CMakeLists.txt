@@ -9,8 +9,8 @@ set(CMAKE_CXX_FLAGS "-O1")
 include_directories("../thirdparty")
 
 set(TEST_FILES ../thirdparty/gtest/gtest-all.cc ../thirdparty/gtest/gtest_main.cc)
-set(SRC allocator.cpp allocator_error.cpp allocator_pointer.cpp allocator_test.cpp)
-set(HDR allocator.h allocator_error.h allocator_pointer.h)
+set(SRC allocator.cpp allocator_error.cpp allocator_pointer.cpp allocator_test.cpp pointer_list.cpp)
+set(HDR allocator.h allocator_error.h allocator_pointer.h pointer_list.h)
 
 add_executable(01_allocator ${SRC} ${TEST_FILES})
 target_link_libraries(01_allocator pthread)

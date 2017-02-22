@@ -26,17 +26,4 @@ public:
     size_t getFreeSize() const;
 };
 
-class PointerList {
-    Pointer p;
-    PointerList * next;
-public:
-    PointerList();
-    PointerList(Pointer);
-    Pointer & get();
-    void setPointer(Pointer &);
-    bool hasNext() const;
-    PointerList * getNext() const;
-    void setNext(PointerList *);
-};
-
 #endif //ALLOCATOR_POINTER

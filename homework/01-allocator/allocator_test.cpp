@@ -62,8 +62,8 @@ static bool fillUp(Allocator& a, size_t allocSize, vector<Pointer>& out) {
         try {
             out.push_back(a.alloc(allocSize));
             writeTo(out.back(), allocSize);
-        } catch (AllocError& e) {
-            std::cout << e.message() << std::endl;
+        } catch (AllocError&) {
+//            std::cout << e.message() << std::endl;
             return true;
         }
 

@@ -9,6 +9,7 @@
 //class PointerList;
 
 #include "allocator_pointer.h"
+#include "pointer_list.h"
 
 /**
  * Wraps given memory area and provides defagmentation allocator interface on
@@ -27,6 +28,8 @@ class Allocator {
     bool deletePointer(PointerList *, Pointer &);
     PointerList * findFreeSpace(PointerList *);
     void addAsFree(PointerList *, void *, size_t);
+    void sanityCheck(PointerList *);
+    bool lookUp(PointerList *, Pointer &);
     
 public:
     Allocator(void * b, size_t size);

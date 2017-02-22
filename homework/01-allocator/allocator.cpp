@@ -8,13 +8,13 @@ Allocator::Allocator(void * b, size_t size){
     this -> size = size;
     this -> freeSize = size;
     this -> pNum = 0;
-    this -> pList = (PointerList *) (base + (size - sizeof(PointerList)));
+    this -> pList = (PointerList *) (base + (size - sizeof(PointerList)) );
 }
 
 Pointer Allocator::alloc (size_t N) {
 //    std::cout << "Alloc" << std::endl;
     if (freeSize > N + sizeof(Pointer)) {
-        Pointer p = Pointer(base, size - (freeSize - pNum * sizeof(Pointer)), N / sizeof(char)); // what if fragmentation?
+        Pointer p = Pointer(base, size - (freeSize - pNum * sizeof(Pointer)), N ); // what if fragmentation?
 //        std::cout << "Mid: " << (void*) base << ' ' << p.get() << std::endl;
         appendPointer(pList, p);
     //    std::cout << "Done" << std::endl;
@@ -24,8 +24,31 @@ Pointer Allocator::alloc (size_t N) {
     }
 }
 
+bool Allocator::lookUp(PointerList * list, Pointer & p) {
+    PointerList * buf = list;
+    bool found = false;
+    while (buf != nullptr) {
+        if (buf->get().get() == p.get() && buf->get().getSize() == p.getSize()) {
+            found = true;
+            break;
+        }
+        buf = buf -> getNext();
+    }
+    return found;
+}
+
 void Allocator::realloc (Pointer& p, size_t N) {
-    
+    if (lookUp(pList, p)) {
+        if (p.getNextFree() - (char*) p.get() == p.getSize() && N <= p.getSize() + p.getFreeSize()) {
+            p.setNextFree((char*) p.get() + N);
+            p.setFreeSize(p.getSize() + p.getFreeSize() - N);
+        } else {
+            free(p);
+            p = alloc(N);
+        }
+    } else {
+        p = alloc(N);
+    }
 }
 
 void Allocator::free (Pointer& p) {
@@ -38,9 +61,25 @@ void Allocator::defrag () {
     
 }
 
+void Allocator::sanityCheck(PointerList * list) {
+    PointerList * buf = list;
+    PointerList * prev;
+
+    while (buf != nullptr) {
+        if ((char*) buf > base + size || (char*) buf < base) {
+            prev -> setNext(nullptr);
+            break;
+        }
+        prev = buf;
+        buf = buf -> getNext();
+    }
+}
+
 PointerList * Allocator::findFreeSpace(PointerList * list) {
     PointerList * buf = list;
     PointerList * prev = nullptr;
+    std::ostringstream log;
+    size_t iter = 0;
  //   std::cout << "FFS: " << std::endl;
     while (buf != nullptr) {
         if (prev != nullptr){
@@ -51,14 +90,13 @@ PointerList * Allocator::findFreeSpace(PointerList * list) {
         }
         prev = buf;
 
+        log << "Buf[" << iter++ << "] = " << (void*) buf << std::endl;
         if ((char*) buf < base || (char*) buf > base + size){
-            if ((char*) buf < base) {
-                throw AllocError(AllocErrorType::InternalError,
-                                 "Out of bounds while looking for free memory for system info (lower)");
-            } else {
-                throw AllocError(AllocErrorType::InternalError,
-                                 "Out of bounds while looking for free memory for system info (higher)");
-            }
+            std::ostringstream oss;
+            oss << "Base: " << (void*) base << ' ' << "Buf: " << (void*) buf << std::endl;
+            sanityCheck(list);
+            throw 1;
+            //throw AllocError(AllocErrorType::MemoryOverwrite, "Memory overwritten.\n" + log.str() + oss.str());
         }
 
         buf = buf -> getNext();

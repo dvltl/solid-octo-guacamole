@@ -8,6 +8,7 @@ enum class AllocErrorType {
     InvalidFree,
     NoMemory,
     InternalError,
+    MemoryOverwrite,
 };
 
 class AllocError : std::runtime_error {
