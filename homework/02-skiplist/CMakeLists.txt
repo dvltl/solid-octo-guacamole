@@ -10,10 +10,8 @@ include_directories("../thirdparty")
 include_directories("./include")
 set(INCL ./include/skiplist)
 
-set(TEST_FILES ../thirdparty/gtest/gtest-all.cc
-	../thirdparty/gtest/gtest_main.cc)
 set(SRC main.cpp)
 set(HDR ${INCL}/node.h ${INCL}/iterator.h ${INCL}/skiplist.h)
 
-add_executable(02_skiplist ${SRC} ${HDR} ${TEST_FILES})
+add_executable(02_skiplist ${SRC} ${HDR})
 target_link_libraries(02_skiplist pthread)

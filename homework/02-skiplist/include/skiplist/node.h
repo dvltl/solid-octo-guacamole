@@ -115,6 +115,14 @@ public:
     return *pNext;
   };
 
+  virtual Node<Key,Value> & down() const {
+    return *pDown;
+  };
+
+  virtual Node<Key,Value> & root() const {
+    return *pRoot;
+  };
+
   /**
    * Set next pointer
    */
