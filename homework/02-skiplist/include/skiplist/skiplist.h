@@ -4,6 +4,7 @@
 #include "node.h"
 #include "iterator.h"
 #include <iostream>
+#include <sstream>
 
 /**
  * Skiplist interface
@@ -20,20 +21,25 @@ private:
   Value val;
 
   void insert(IndexNode<Key, Value>* cur, IndexNode<Key, Value>* prev,
-               DataNode<Key,Value> * toAdd) const {
-      IndexNode<Key,Value> * buf = new IndexNode<Key,Value>( &(cur->down()), toAdd);
-      prev->next(buf);
-      toAdd->next( &static_cast<DataNode<Key,Value>&>(prev->root().next()));
-      static_cast<DataNode<Key,Value>&>(prev->root()).next(toAdd);
+               DataNode<Key,Value> * toAdd, IndexNode<Key,Value> * down, IndexNode<Key,Value> * newNode) const {
+      IndexNode<Key,Value> * buf = new IndexNode<Key,Value>(down, toAdd);
+      newNode = buf;
       buf->next(cur);
+
+      prev->next(buf);
+
+      toAdd->next( &static_cast<DataNode<Key,Value>&>(cur->root()));
+      static_cast<DataNode<Key,Value>&>(prev->root()).next(toAdd);
   }
 
-  bool recInsert(IndexNode<Key,Value>* start, IndexNode<Key,Value>* end, DataNode<Key,Value>* toAdd,
-                 const int level, const Value * ret, const bool insPresent) const {
+  IndexNode<Key,Value> * recInsert(IndexNode<Key,Value>* start, DataNode<Key,Value>* toAdd,
+                                 const int level, const Value * ret, const bool insPresent) const {
       if (level == 0) {
-          // looking for the place to insert
+          std::cout << "Ground level" << std::endl;
+          assert(pTailIdx != &start->next());
           IndexNode<Key,Value> * cur = &static_cast<IndexNode<Key,Value>&>(start->next());
           IndexNode<Key,Value> * prev = start;
+          IndexNode<Key,Value> * newNode;
           bool ins = false;
 
           std::cout << "key [1]" << std::endl;
@@ -43,12 +49,18 @@ private:
                   if (cur->key() == toAdd->key()) {
                       ret = &cur->value();
                       if (insPresent) {
-                          insert(cur, prev, toAdd);
+                          std::cout << "Inserting (eq)" << std::endl;
+                          insert(cur, prev, toAdd, nullptr, newNode);
+                          std::cout << "Inserted (eq)" << std::endl;
                           ins = true;
+                      } else {
+                          return nullptr;
                       }
                   } else {
                       ret = nullptr;
-                      insert(cur, prev, toAdd);
+                      std::cout << "Inserting (not eq)" << std::endl;
+                      insert(cur, prev, toAdd, nullptr, newNode);
+                      std::cout << "Inserted (not eq)" << std::endl;
                       ins = true;
                   }
 
@@ -61,11 +73,13 @@ private:
           std::cout << "key [1] OK" <<std::endl;
 
           if (!ins) {
-              insert(cur, prev, toAdd);
+              insert(cur, prev, toAdd, nullptr, newNode);
           }
+          std::cout << "Inserted" << std::endl;
 
-          return true;
+          return newNode;
       } else {
+          std::cout << "Level: " << level << std::endl;
           IndexNode<Key,Value> * newStart = start;
           IndexNode<Key,Value> * newEnd = &static_cast<IndexNode<Key,Value>&>(start->next());
 
@@ -76,13 +90,16 @@ private:
           }
           std::cout << "key [2] OK" << std::endl;
 
-          if( recInsert(&static_cast<IndexNode<Key,Value>&>(newStart->down()),
-                        &static_cast<IndexNode<Key,Value>&>(newEnd->down()),
-                        toAdd, level - 1, ret, insPresent) && rand() % 2) {
-              insert(end, start, toAdd);
-              return true;
+          IndexNode<Key,Value> * down = recInsert(&static_cast<IndexNode<Key,Value>&>(newStart->down()),
+                                                  toAdd, level - 1, ret, insPresent);
+          if( down != nullptr && rand() % 2) {
+              IndexNode<Key,Value> * newNode;
+              std::cout << "Trying to add at level " << level << std::endl;
+              insert(newEnd, newStart, toAdd, down, newNode);
+              std::cout << "Added at level " << level << std::endl;
+              return newNode;
           } else {
-              return false;
+              return nullptr;
           }
       }
   }
@@ -98,9 +115,10 @@ private:
               cur = aHeadIdx[i];
           } else {
               // lowest level has structure like that => empty list
-              insert(&static_cast<IndexNode<Key,Value>&>(cur->next()), cur, toAdd);
+              IndexNode<Key,Value> * newNode;
+              insert(&static_cast<IndexNode<Key,Value>&>(cur->next()), cur, toAdd, nullptr, newNode);
               while (i < MAXHEIGHT && rand() % 2) {
-                  insert(&static_cast<IndexNode<Key,Value>&>(aHeadIdx[i]->next()), aHeadIdx[i], toAdd);
+                  insert(&static_cast<IndexNode<Key,Value>&>(aHeadIdx[i]->next()), aHeadIdx[i], toAdd, newNode, newNode);
                   ++i;
               }
               break;
@@ -146,6 +164,23 @@ public:
     delete pTail;
   }
 
+  virtual std::string dump() const {
+      std::ostringstream oss;
+      Node<Key,Value> * cur = aHeadIdx[0];
+
+      oss << "Dump: " << std::endl;
+
+      while (cur != pTailIdx) {
+          if (cur != aHeadIdx[0])
+              oss << cur->key() << ' ' << cur->value() << std::endl;
+          cur = &cur->next();
+      }
+
+      oss << "End dump" << std::endl;
+
+      return oss.str();
+  }
+
   /**
    * @brief Is the list empty?
    * @return true if empty, false otherwise
@@ -172,14 +207,20 @@ public:
    */
 
   virtual Value* Put(const Key& key, const Value& value) const {
-      DataNode<Key,Value> * toAdd = new DataNode<Key,Value>(&key, &value);
+      Key * k = new Key;
+      Value * v = new Value;
+      *k = key;
+      *v = value;
+      DataNode<Key,Value> * toAdd = new DataNode<Key,Value>(k, v);
       Value * ret;
 
       if (isEmpty()) {
+          std::cout << "Empty" << std::endl;
           emptyInsert(toAdd);
       } else {
+          std::cout << "Not empty" << std::endl;
           const int i = MAXHEIGHT - 1;
-          recInsert(aHeadIdx[i], pTailIdx, toAdd, i, ret, true);
+          recInsert(aHeadIdx[i], toAdd, i, ret, true);
       }
 
       return ret;
@@ -197,14 +238,18 @@ public:
    * @return existing value for the given key or nullptr
    */
   virtual Value* PutIfAbsent(const Key& key, const Value& value) {
-      DataNode<Key,Value> * toAdd = new DataNode<Key,Value>(&key, &value);
+      Key * k = new Key;
+      Value * v = new Value;
+      *k = key;
+      *v = value;
+      DataNode<Key,Value> * toAdd = new DataNode<Key,Value>(k, v);
       Value * ret;
 
       if (isEmpty()) {
           emptyInsert(toAdd);
       } else {
           int i = MAXHEIGHT - 1;
-          recInsert(aHeadIdx[i], pTailIdx, toAdd, i, ret, false);
+          recInsert(aHeadIdx[i], toAdd, i, ret, false);
       }
 
       return ret;

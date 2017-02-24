@@ -8,6 +8,7 @@ int main() {
     for (int i = 0; i < 20; ++i) {
         assert(nullptr == skList.Put(i, -i));
         std::cout << i << std::endl;
+        std::cout << skList.dump() << std::endl;
     }
 
     std::cout << "Put in empty list work OK" << std::endl;
