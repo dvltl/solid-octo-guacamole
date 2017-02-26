@@ -18,11 +18,9 @@ private:
   IndexNode<Key, Value> *pTailIdx;
   IndexNode<Key, Value> *aHeadIdx[MAXHEIGHT];
 
-  void insert(IndexNode<Key, Value>* cur, IndexNode<Key, Value>* prev,
-              DataNode<Key,Value> * toAdd, IndexNode<Key,Value> * down,
-              IndexNode<Key,Value> * newNode) const {
+  IndexNode<Key,Value> * insert(IndexNode<Key, Value>* cur, IndexNode<Key, Value>* prev,
+              DataNode<Key,Value> * toAdd, IndexNode<Key,Value> * down) const {
       IndexNode<Key,Value> * buf = new IndexNode<Key,Value>(down, toAdd);
-      newNode = buf;
 
       buf->next(cur);
       toAdd->next( &static_cast<DataNode<Key,Value>&>(cur->root()));
@@ -30,6 +28,8 @@ private:
       prev->next(buf);
 
       static_cast<DataNode<Key,Value>&>(prev->root()).next(toAdd);
+
+      return buf;
   }
 
   IndexNode<Key,Value> * recInsert(IndexNode<Key,Value>* start, DataNode<Key,Value>* toAdd,
@@ -38,7 +38,7 @@ private:
 //          std::cout << "Ground level" << std::endl;
           IndexNode<Key,Value> * cur = &static_cast<IndexNode<Key,Value>&>(start->next());
           IndexNode<Key,Value> * prev = start;
-          IndexNode<Key,Value> * newNode;
+          IndexNode<Key,Value> * newNode = nullptr;
           bool ins = false;
 
 //          std::cout << "key [1]" << std::endl;
@@ -49,16 +49,14 @@ private:
                       ret = new Value(cur->value());
                       if (insPresent) {
 //                          std::cout << "Inserting (eq)" << std::endl;
-                          insert(&static_cast<IndexNode<Key,Value>&>(cur->next()), prev, toAdd, nullptr, newNode);
+                          newNode = insert(&static_cast<IndexNode<Key,Value>&>(cur->next()), prev, toAdd, nullptr);
                           delete cur;
 //                          std::cout << "Inserted (eq)" << std::endl;
-                      } else {
-                          return nullptr;
                       }
                   } else {
                       ret = nullptr;
 //                      std::cout << "Inserting (not eq)" << std::endl;
-                      insert(cur, prev, toAdd, nullptr, newNode);
+                      newNode = insert(cur, prev, toAdd, nullptr);
 //                      std::cout << "Inserted (not eq)" << std::endl;
                   }
                   ins = true;
@@ -72,7 +70,7 @@ private:
 //          std::cout << "key [1] OK" <<std::endl;
 
           if (!ins) {
-              insert(cur, prev, toAdd, nullptr, newNode);
+              newNode = insert(cur, prev, toAdd, nullptr);
           }
 //          std::cout << "Inserted" << std::endl;
 
@@ -98,7 +96,7 @@ private:
           if( down && rand() % 2) {
               IndexNode<Key,Value> * newNode;
               std::cout << "Trying to add at level " << level << std::endl;
-              insert(newEnd, newStart, toAdd, down, newNode);
+              newNode = insert(newEnd, newStart, toAdd, down);
               std::cout << "Added at level " << level << std::endl;
               return newNode;
           } else {
@@ -110,7 +108,7 @@ private:
   /**
    * @brief search for the key in skiplist
    * @param key
-   * @return pointer to the highest IndexNode connected to the key or nullptr
+   * @return pointer previous to the pointer to the highest IndexNode connected to the key or nullptr
    */
   IndexNode<Key,Value> * search(const Key & key) const {
       int i = MAXHEIGHT - 1;
@@ -123,7 +121,7 @@ private:
                   prev = cur;
                   cur = &static_cast<IndexNode<Key,Value>&>(cur->next());
               } else if (cur->key() == key) {
-                  return cur;
+                  return prev;
               } else {
                   break;
               }
@@ -275,7 +273,7 @@ public:
   virtual Value* Get(const Key& key) const {
       IndexNode<Key,Value> * res = search(key);
       if (res != nullptr) {
-          Value * ret = new Value(res->value());
+          Value * ret = new Value(res->next().value());
           return ret;
       } else {
           return nullptr;
@@ -293,7 +291,8 @@ public:
   virtual Value* Delete(const Key& key) {
       IndexNode<Key,Value> * res = search(key);
       if (res != nullptr) {
-          Value * ret = new Value(res->value());
+          Value * ret = new Value(res->next().value());
+
           return ret;
       } else {
           return nullptr;
