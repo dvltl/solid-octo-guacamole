@@ -14,4 +14,3 @@ set(SRC main.cpp)
 set(HDR ${INCL}/node.h ${INCL}/iterator.h ${INCL}/skiplist.h)
 
 add_executable(02_skiplist ${SRC} ${HDR})
-target_link_libraries(02_skiplist pthread)

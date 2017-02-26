@@ -1,4 +1,4 @@
-#include "skiplist/skiplist.h"
+#include "include/skiplist/skiplist.h"
 #include <cassert>
 #include <iostream>
 
@@ -6,17 +6,19 @@ int main() {
     SkipList<int, float, 4> skList;
 
     for (int i = 0; i < 10; ++i) {
-        assert(nullptr == skList.Put(i, -i));
-        std::cout << i << std::endl;
+        assert(nullptr == skList.Put(i, float(-i)));
     }
 
+    std::cout << skList.dump();
     std::cout << "Put in empty list works OK" << std::endl;
 
     float * buf;
     for (int i = 0; i < 20; ++i) {
         if (i < 10) {
-            buf = skList.PutIfAbsent(i, i * 0.3);
+            buf = skList.PutIfAbsent(i, float(i * 0.3));
             assert(nullptr != buf);
+            std::cout << *buf << ' ' << -i << std::endl;
+            assert(*buf == float(-i));
             delete buf;
         } else {
             assert(nullptr == skList.PutIfAbsent(i, i * 0.3));
