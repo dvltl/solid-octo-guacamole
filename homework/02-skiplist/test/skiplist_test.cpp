@@ -85,6 +85,6 @@ TEST(SkipListTest, PutExistingInNotEmpty) {
     delete buf;
     buf = sk.Get(0);
     ASSERT_NE(nullptr, buf);
-    ASSERT_EQ(*buf, 1.1);
+    ASSERT_EQ(*buf, 1.1f);
     delete buf;
 }

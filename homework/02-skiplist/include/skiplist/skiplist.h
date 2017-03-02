@@ -36,7 +36,7 @@ private:
 
   IndexNode<Key,Value> * recInsert(IndexNode<Key,Value>* start, DataNode<Key,Value>* toAdd,
                                    const int level, const bool insPresent,
-                                   Value * pVal, bool & init) const {
+                                   Value & pVal, bool & init) const {
       if (level == 0) {
           IndexNode<Key,Value> * cur = &static_cast<IndexNode<Key,Value>&>(start->next());
           IndexNode<Key,Value> * prev = start;
@@ -47,7 +47,7 @@ private:
               //need also pointers to upper levels to make insertion there possible
               if (cur->key() >= toAdd->key()) {
                   if (cur->key() == toAdd->key()) {
-                      *pVal = cur->value();
+                      pVal = cur->value();
                       init = true;
                       if (insPresent) {
                           newNode = insert(&static_cast<IndexNode<Key,Value>&>(cur->next()), prev, toAdd, nullptr);
@@ -81,6 +81,7 @@ private:
 
           IndexNode<Key,Value> * down = recInsert(&static_cast<IndexNode<Key,Value>&>(newStart->down()),
                                                   toAdd, level - 1, insPresent, pVal, init);
+          std::cout << "Val: " << pVal << std::endl;
           if (down != nullptr && rand() % 2) {
               IndexNode<Key,Value> * newNode;
               if (newEnd != pTailIdx && newEnd->key() == toAdd->key()){
@@ -223,14 +224,15 @@ public:
 
       const int i = MAXHEIGHT - 1;
 
-      Value * pVal = new Value;
+      Value ret;
       bool inited = false;
-      recInsert(aHeadIdx[i], toAdd, i, true, pVal, inited);
+      recInsert(aHeadIdx[i], toAdd, i, true, ret, inited);
 
       if (inited) {
+          Value * pVal = new Value;
+          *pVal = ret;
           return pVal;
       } else {
-          delete pVal;
           return nullptr;
       }
   };
@@ -257,11 +259,13 @@ public:
 
       const int i = MAXHEIGHT - 1;
 
-      Value * pVal = new Value;
+      Value ret;
       bool inited = false;
-      recInsert(aHeadIdx[i], toAdd, i, false, pVal, inited);
+      recInsert(aHeadIdx[i], toAdd, i, false, ret, inited);
 
       if (inited) {
+          Value * pVal = new Value;
+          *pVal = ret;
           return pVal;
       } else {
           delete pVal;
