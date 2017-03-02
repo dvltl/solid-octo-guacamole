@@ -47,10 +47,8 @@ private:
               //need also pointers to upper levels to make insertion there possible
               if (cur->key() >= toAdd->key()) {
                   if (cur->key() == toAdd->key()) {
-                      std::cout << "found" <<std::endl;
                       *pVal = cur->value();
                       init = true;
-                      std::cout << "inited" <<std::endl;
                       if (insPresent) {
                           newNode = insert(&static_cast<IndexNode<Key,Value>&>(cur->next()), prev, toAdd, nullptr);
                           delete cur;
@@ -103,35 +101,28 @@ private:
    * @param key
    * @return pointer previous to the pointer to the highest IndexNode connected to the key or nullptr
    */
-  IndexNode<Key,Value> * search(const Key & key, int * level) const {
-      int i = MAXHEIGHT - 1;
-      IndexNode<Key,Value> * cur = &static_cast<IndexNode<Key,Value>&>(aHeadIdx[i]->next());
-      IndexNode<Key,Value> * prev = aHeadIdx[i];
+  IndexNode<Key,Value> * search(IndexNode<Key,Value> * begin, const Key & key, int & level) const {
+      IndexNode<Key,Value> * cur = &static_cast<IndexNode<Key,Value>&>(begin->next());
+      IndexNode<Key,Value> * prev = aHeadIdx[level];
 
-      while (i >= 0) {
+      while (level >= 0) {
           while (cur != pTailIdx) {
               if (cur->key() < key) {
                   prev = cur;
                   cur = &static_cast<IndexNode<Key,Value>&>(cur->next());
               } else if (cur->key() == key) {
-                  if (level != nullptr) {
-                      *level = i;
-                  }
                   return prev;
               } else {
                   break;
               }
           }
-          if (i > 0) {
+          if (level > 0) {
               prev = &static_cast<IndexNode<Key,Value>&>(prev->down());
               cur = &static_cast<IndexNode<Key,Value>&>(prev->next());
           }
-          --i;
+          --level;
       }
 
-      if (level != nullptr) {
-          *level = 0;
-      }
       return nullptr;
   }
 
@@ -286,7 +277,8 @@ public:
    * @return value assosiated with given key or nullptr. Must free ptr after use if not nullptr
    */
   virtual Value* Get(const Key& key) const {
-      IndexNode<Key,Value> * res = search(key, nullptr);
+      int level = MAXHEIGHT - 1;
+      IndexNode<Key,Value> * res = search(aHeadIdx[level], key, level);
       if (res != nullptr) {
           Value * ret = new Value(res->next().value());
           return ret;
@@ -305,24 +297,23 @@ public:
    */
   virtual Value* Delete(const Key& key) {
       int level;
-      IndexNode<Key,Value> * res = search(key, &level);
-      if (res != nullptr) {
-          Value * ret = new Value(res->next().value());
-          while (level >= 0) {
-              IndexNode<Key,Value> * toDel = &static_cast<IndexNode<Key,Value>&>(res->next());
-              res->next(&static_cast<IndexNode<Key,Value>&>(toDel->next()));
-              delete toDel;
-
-              if (level > 0) {
-                  res = &static_cast<IndexNode<Key,Value>&>(res->down());
-              }
-
-              --level;
+      IndexNode<Key,Value> * res = search(aHeadIdx[level], key, level);
+      IndexNode<Key,Value> * prev = res;
+      Value * ret = new Value;
+      while (res != nullptr) {
+          *ret = res->next().value();
+          prev = res;
+          res = &static_cast<IndexNode<Key,Value>&>(res->next());
+          prev->next(&static_cast<IndexNode<Key,Value>&>(res->next()));
+          delete res;
+          --level;
+          if (level > 0) {
+            res = search(&static_cast<IndexNode<Key,Value>&>(prev->down()), key, level);
+          } else {
+            break;
           }
-          return ret;
-      } else {
-          return nullptr;
       }
+      return ret;
   };
 
   /**
@@ -336,7 +327,7 @@ public:
    * Return iterator onto very first key in the skiplist
    */
   virtual Iterator<Key, Value> cbegin() const {
-    return Iterator<Key,Value>(pTail);
+    return Iterator<Key,Value>(&aHeadIdx[0]->next());
   };
 
   /**
@@ -344,14 +335,22 @@ public:
    * the given key
    */
   virtual Iterator<Key, Value> cfind(const Key &min) const {
-    return Iterator<Key,Value>(pTail);
+      Iterator<Key,Value> result = cbegin();
+      while (result != cend()) {
+          if (result.key() >= min) {
+              break;
+          } else {
+              result++;
+          }
+      }
+      return result;
   };
 
   /**
    * Returns iterator on the skiplist tail
    */
   virtual Iterator<Key, Value> cend() const {
-    return Iterator<Key,Value>(pTail);
+    return Iterator<Key,Value>(pTailIdx);
   };
 };
 #endif // __SKIPLIST_H

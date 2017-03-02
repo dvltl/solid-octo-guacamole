@@ -32,3 +32,59 @@ TEST(SkipListTest, SimplePut) {
   ASSERT_EQ(string("test"), it.value()) << "Iterator value is correct";
   ASSERT_EQ(string("test"), *it)        << "Iterator value is correct";
 }
+
+// new tests
+
+TEST(SkipListTest, PutInEmpty) {
+    SkipList<int, float, 4> sk;
+    float * buf = sk.Put(0, 2.0);
+    ASSERT_EQ(nullptr, buf);
+    delete buf;
+}
+
+TEST(SkipListTest, PutIfAbsentInNotEmpty) {
+    SkipList<int, float, 4> sk;
+    float * buf = sk.Put(0, 2.0);
+    ASSERT_EQ(nullptr, buf);
+    delete buf;
+    buf = sk.PutIfAbsent(0, 1.1);
+    ASSERT_NE(nullptr, buf);
+    ASSERT_EQ(2.0, *buf);
+    delete buf;
+    buf = sk.PutIfAbsent(0, 1.1); //to check that list wasn't changed
+    ASSERT_NE(nullptr, buf);
+    ASSERT_EQ(2.0, *buf);
+    delete buf;
+}
+
+TEST(SkipListTest, GetEmpty) {
+    SkipList<int, float, 4> sk;
+    float * buf = sk.Get(0);
+    ASSERT_EQ(nullptr, buf);
+}
+
+TEST(SkipListTest, GetNotEmpty) {
+    SkipList<int, float, 4> sk;
+    float * buf = sk.Put(0, 2.0);
+    ASSERT_EQ(nullptr, buf);
+    delete buf;
+    buf = sk.Get(0);
+    ASSERT_NE(nullptr, buf);
+    ASSERT_EQ(2.0, *buf);
+    delete buf;
+}
+
+TEST(SkipListTest, PutExistingInNotEmpty) {
+    SkipList<int, float, 4> sk;
+    float * buf = sk.Put(0, 2.0);
+    ASSERT_EQ(nullptr, buf);
+    delete buf;
+    buf = sk.Put(0, 1.1);
+    ASSERT_NE(nullptr, buf);
+    ASSERT_EQ(2.0, *buf);
+    delete buf;
+    buf = sk.Get(0);
+    ASSERT_NE(nullptr, buf);
+    ASSERT_EQ(*buf, 1.1);
+    delete buf;
+}

@@ -2,7 +2,7 @@
 #include <cassert>
 #include <iostream>
 
-int main() {
+int main_bicycle() {
     SkipList<int, float, 4> skList;
 
     for (int i = 0; i < 10; ++i) {
