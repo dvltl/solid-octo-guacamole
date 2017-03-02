@@ -81,7 +81,6 @@ private:
 
           IndexNode<Key,Value> * down = recInsert(&static_cast<IndexNode<Key,Value>&>(newStart->down()),
                                                   toAdd, level - 1, insPresent, pVal, init);
-          std::cout << "Val: " << pVal << std::endl;
           if (down != nullptr && rand() % 2) {
               IndexNode<Key,Value> * newNode;
               if (newEnd != pTailIdx && newEnd->key() == toAdd->key()){
