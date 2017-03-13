@@ -81,18 +81,25 @@ private:
 
           IndexNode<Key,Value> * down = recInsert(&static_cast<IndexNode<Key,Value>&>(newStart->down()),
                                                   toAdd, level - 1, insPresent, pVal, init);
-          if (down != nullptr && rand() % 2) {
-              IndexNode<Key,Value> * newNode;
-              if (newEnd != pTailIdx && newEnd->key() == toAdd->key()){
-                  IndexNode<Key,Value> * buf = newEnd;
-                  newEnd = &static_cast<IndexNode<Key,Value>&>(newEnd->next());
-                  delete buf;
-              }
-              newNode = insert(newEnd, newStart, toAdd, down);
-              return newNode;
+          if (newEnd != pTailIdx && newEnd->key() == toAdd->key()){
+              IndexNode<Key,Value> * buf = newEnd;
+              newEnd = &static_cast<IndexNode<Key,Value>&>(newEnd->next());
+              delete buf;
+              return insert(newEnd, newStart, toAdd, down);
           } else {
-              return nullptr;
+              if (down != nullptr && rand() % 2) { // possibly need to swap this condition and next
+                  return insert(newEnd, newStart, toAdd, down);
+              } else {
+                  return nullptr;
+              }
           }
+          /*
+           *  Problem:
+           * 	Level: 3 //
+           *    Level: 2 // 0 : 2,
+           *    Level: 1 // 0 : 1.1,
+           *    Level: 0 // 0 : 1.1,
+           */
       }
   }
 
@@ -267,7 +274,6 @@ public:
           *pVal = ret;
           return pVal;
       } else {
-          delete pVal;
           return nullptr;
       }
   };
@@ -283,7 +289,8 @@ public:
       int level = MAXHEIGHT - 1;
       IndexNode<Key,Value> * res = search(aHeadIdx[level], key, level);
       if (res != nullptr) {
-          Value * ret = new Value(res->next().value());
+          Value * ret = new Value;
+          *ret = res->next().value();
           return ret;
       } else {
           return nullptr;
@@ -325,6 +332,31 @@ public:
   virtual const Value* operator[](const Key& key) {
     return Get(key);
   };
+
+  /**
+   * @brief HasNonEmptyLevels
+   * @return
+   */
+  virtual bool HasNonEmptyLevels() const {
+      for(int level = MAXHEIGHT - 1; level > 0; --level) {
+          if (&aHeadIdx[level]->next() != pTailIdx) {
+              return true;
+          }
+      }
+      return false;
+  }
+
+  virtual void PrintList() const {
+      for (int level = MAXHEIGHT - 1; level >= 0; --level) {
+          IndexNode<Key,Value> * cur = &static_cast<IndexNode<Key,Value>&>(aHeadIdx[level]->next());
+          std::cout << "Level: " << level << " // ";
+          while (cur != pTailIdx) {
+              std::cout << cur->key() << " : " << cur->value() << ", ";
+              cur = &static_cast<IndexNode<Key,Value>&>(cur->next());
+          }
+          std::cout << std::endl;
+      }
+  }
 
   /**
    * Return iterator onto very first key in the skiplist

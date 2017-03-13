@@ -79,7 +79,7 @@ TEST(SkipListTest, PutExistingInNotEmpty) {
     float * buf = sk.Put(0, 2.0);
     ASSERT_EQ(nullptr, buf);
     delete buf;
-    buf = sk.Put(0, 1.1);
+    buf = sk.Put(0, 1.1f);
     ASSERT_NE(nullptr, buf);
     ASSERT_EQ(2.0, *buf);
     delete buf;
@@ -87,4 +87,14 @@ TEST(SkipListTest, PutExistingInNotEmpty) {
     ASSERT_NE(nullptr, buf);
     ASSERT_EQ(*buf, 1.1f);
     delete buf;
+}
+
+TEST(SkipListTest, HasNonEmptyLevels) {
+    SkipList<int, float, 4> sk;
+
+    for (int i = 0; i < 20; ++i) {
+        sk.Put(i, i * 0.3f);
+    }
+
+    assert(sk.HasNonEmptyLevels());
 }
