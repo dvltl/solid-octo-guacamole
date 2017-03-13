@@ -87,19 +87,12 @@ private:
               delete buf;
               return insert(newEnd, newStart, toAdd, down);
           } else {
-              if (down != nullptr && rand() % 2) { // possibly need to swap this condition and next
+              if (down != nullptr && rand() % 2) {
                   return insert(newEnd, newStart, toAdd, down);
               } else {
                   return nullptr;
               }
           }
-          /*
-           *  Problem:
-           * 	Level: 3 //
-           *    Level: 2 // 0 : 2,
-           *    Level: 1 // 0 : 1.1,
-           *    Level: 0 // 0 : 1.1,
-           */
       }
   }
 
